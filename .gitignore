@@ -1,0 +1,50 @@
+# ── Environment variables (NEVER commit these) ──
+.env
+*.env
+.env.local
+
+# ── ML model files (large binary files, regenerate locally) ──
+ml/meal_scorer.pkl
+ml/encodings.json
+ml/training_data.csv
+ml/training_data_debug.csv
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Jupyter ──
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Virtual environments ──
+venv/
+env/
+.venv/
+.env/
+
+# ── Flutter ──
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/pubspec.lock
+
+# ── VSCode ──
+.vscode/
+*.code-workspace
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ──
+*.log
+logs/
