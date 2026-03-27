@@ -1,0 +1,57 @@
+name: nutrisync
+description: NutriSync AI - Intelligent Nutrition Operating System
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP and API
+  http: ^1.1.0
+  dio: ^5.3.2
+
+  # State management
+  provider: ^6.0.5
+
+  # Local storage
+  shared_preferences: ^2.2.1
+
+  # UI
+  fl_chart: ^0.65.0
+  flutter_spinkit: ^5.2.0
+  cached_network_image: ^3.3.0
+  percent_indicator: ^4.2.3
+  lottie: ^2.7.0
+
+  # Camera / PPG
+  camera: ^0.10.5+5
+  permission_handler: ^11.0.1
+
+  # Health / Google Fit
+  health: ^13.3.1
+
+  # Icons
+  cupertino_icons: ^1.0.2
+  flutter_svg: ^2.0.7
+
+  # Notifications
+  flutter_local_notifications: ^17.0.0
+
+  # Utils
+  intl: ^0.18.1
+  uuid: ^4.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
