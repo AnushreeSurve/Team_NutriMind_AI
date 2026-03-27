@@ -114,24 +114,43 @@ def fetch_user_profile(user_id: str) -> dict:
 
 
 def fetch_todays_checkin(user_id: str, date_str: str) -> dict | None:
-    """
-    date_str: "YYYY-MM-DD" from Flutter (IST local date — avoids UTC mismatch)
-    Column in DB is 'checkin_date', NOT 'date'
-    """
+    user_id = str(user_id).strip()
+    date_str = str(date_str).strip()
+
+    print(f"[db] fetch_todays_checkin: user_id={user_id!r} date={date_str!r}")
+
     resp = (
         supabase.table("morning_checkins")
         .select("*")
-        .eq("user_id", str(user_id))       # cast to str — uuid vs text safety
-        .eq("checkin_date", date_str)       # ← correct column name
+        .eq("user_id", user_id)
+        .eq("checkin_date", date_str)
         .execute()
     )
+    print(f"[db] checkin query result count: {len(resp.data or [])}")
 
     if not resp.data:
-        print(f"[db] No checkin found for user={user_id} date={date_str}")
+        # Fallback — fetch latest checkin for this user regardless of date
+        # This handles edge cases where date format differs slightly
+        fallback = (
+            supabase.table("morning_checkins")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        if fallback.data:
+            row = fallback.data[0]
+            saved_date = str(row.get("checkin_date", ""))
+            print(f"[db] fallback found checkin with date={saved_date!r} vs requested={date_str!r}")
+            # Only use fallback if it's today's checkin
+            if saved_date == date_str:
+                row["date"] = saved_date
+                return row
         return None
 
     checkin = resp.data[0]
-    checkin["date"] = checkin["checkin_date"]  # alias for ML code compatibility
+    checkin["date"] = checkin["checkin_date"]
     return checkin
 
 

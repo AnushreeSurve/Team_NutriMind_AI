@@ -48,7 +48,11 @@ def _get_user(email: str) -> dict | None:
         .eq("email", email)
         .execute()
     )
-    return res.data[0] if res.data else None
+    if not res.data:
+        return None
+    user = res.data[0]
+    user["user_id"] = str(user["user_id"]).strip()  # ← force string
+    return user
 
 
 def recommend_meals(email: str, slot: str) -> dict:
