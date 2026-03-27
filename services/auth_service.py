@@ -1,5 +1,5 @@
 # ============================================================
-#  services/auth_service.py  —  Signup with Supabase
+#  services/auth_service.py
 # ============================================================
 
 import uuid
@@ -37,17 +37,25 @@ def calculate_macros(calories: int, goal: str) -> dict:
 
 
 def signup_user(req: SignupRequest) -> dict:
-    # 1. Check if email already exists in profiles
-    existing = supabase.table("profiles").select("email").eq("email", req.email).execute()
+    # 1. Check if email already exists in profiles table
+    existing = supabase.table("profiles").select("user_id, email").eq("email", req.email).execute()
     if existing.data:
-        return {"error": "Email already registered."}
+        return {"error": "Email already registered. Please login instead."}
 
-    # 2. Create auth user in Supabase Auth
-    auth_response = supabase.auth.sign_up({"email": req.email, "password": req.email + "_nutrisync"})
-    if not auth_response.user:
-        return {"error": "Auth signup failed. Check your Supabase Auth settings."}
-
-    user_id = str(auth_response.user.id)
+    # 2. Create auth user in Supabase Auth — handle already registered gracefully
+    try:
+        auth_response = supabase.auth.sign_up({
+            "email": req.email,
+            "password": req.email + "_nutrisync"
+        })
+        if not auth_response.user:
+            return {"error": "Auth signup failed. Check Supabase Auth settings."}
+        user_id = str(auth_response.user.id)
+    except Exception as e:
+        err = str(e).lower()
+        if "already registered" in err or "already been registered" in err:
+            return {"error": "Email already registered. Please login instead."}
+        return {"error": f"Auth error: {str(e)}"}
 
     # 3. Calculate nutrition targets
     bmr      = calculate_bmr(req)
@@ -55,7 +63,7 @@ def signup_user(req: SignupRequest) -> dict:
     cal_goal = adjust_for_goal(tdee, req.goal)
     macros   = calculate_macros(cal_goal, req.goal)
 
-    # 4. Insert into profiles table (matches your schema exactly)
+    # 4. Insert into profiles table
     profile = {
         "user_id":              user_id,
         "name":                 req.name,
@@ -80,6 +88,37 @@ def signup_user(req: SignupRequest) -> dict:
     return {
         "message":              "Signup successful!",
         "user_id":              user_id,
+        "name":                 req.name,
+        "onboarding_complete":  True,
         "daily_calorie_target": cal_goal,
         **macros,
+    }
+
+
+def login_user(email: str) -> dict:
+    # Sign in with Supabase Auth using hardcoded password scheme
+    try:
+        auth_response = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": email + "_nutrisync"
+        })
+        if not auth_response.user:
+            return {"error": "Invalid email or password."}
+        user_id = str(auth_response.user.id)
+    except Exception as e:
+        return {"error": "Invalid email or password."}
+
+    # Fetch profile from profiles table
+    profile = supabase.table("profiles").select("*").eq("email", email).execute()
+    if not profile.data:
+        return {"error": "Account not found. Please sign up first."}
+
+    p = profile.data[0]
+    return {
+        "message":             "Login successful!",
+        "user_id":             p.get("user_id", user_id),
+        "name":                p.get("name", ""),
+        "email":               email,
+        "onboarding_complete": p.get("onboarding_complete", True),
+        "daily_calorie_target": p.get("daily_calorie_target", 0),
     }

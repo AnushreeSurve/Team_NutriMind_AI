@@ -1,22 +1,31 @@
 # ============================================================
-#  routes/auth.py  —  POST /auth/signup
+#  routes/auth.py
 # ============================================================
 
-from fastapi import APIRouter
-from schemas.auth_schema import SignupRequest, SignupResponse
-from services.auth_service import signup_user
+from fastapi import APIRouter, HTTPException
+from schemas.auth_schema import SignupRequest
+from services.auth_service import signup_user, login_user
+from pydantic import BaseModel, EmailStr
 
 router = APIRouter()
 
 
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str  # received but backend uses email+"_nutrisync" scheme
+
+
 @router.post("/signup")
 def signup(req: SignupRequest):
-    """
-    Register a new user.
-    Calculates BMR, TDEE, calorie goal, and macro targets automatically.
-    """
     result = signup_user(req)
     if "error" in result:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.post("/login")
+def login(req: LoginRequest):
+    result = login_user(req.email)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     return result
