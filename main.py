@@ -6,7 +6,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import auth, meals, food, preferences, recommendations, weather, health, prediction, ppg
+from routes import auth, meals, food, preferences, recommendations, weather, health, prediction, ppg, checkin
 
 app = FastAPI(
     title="NutriSync AI",
@@ -32,6 +32,7 @@ app.include_router(weather.router,         prefix="/weather",      tags=["Weathe
 app.include_router(health.router,          prefix="/health",       tags=["Health Condition Support"])
 app.include_router(prediction.router,      prefix="/ml",           tags=["ML / Prediction"])
 app.include_router(ppg.router,             prefix="/ppg",       tags=["PPG / Biometric Sensing"])
+app.include_router(checkin.router, prefix="/checkin", tags=["Check-in"])
 
 @app.get("/", tags=["Root"])
 def root():
