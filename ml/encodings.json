@@ -1,0 +1,122 @@
+{
+  "gender": {
+    "male": 0,
+    "female": 1,
+    "other": 2
+  },
+  "goal": {
+    "lose": 0,
+    "maintain": 1,
+    "gain": 2
+  },
+  "diet_type": {
+    "veg": 0,
+    "non-veg": 1,
+    "vegan": 2,
+    "jain": 3
+  },
+  "activity_level": {
+    "sedentary": 0,
+    "moderate": 1,
+    "active": 2
+  },
+  "budget": {
+    "low": 0,
+    "mid": 1,
+    "high": 2
+  },
+  "sleep_quality": {
+    "bad": 0,
+    "okay": 1,
+    "good": 2
+  },
+  "energy_level": {
+    "tired": 0,
+    "normal": 1,
+    "energetic": 2
+  },
+  "mood": {
+    "stressed": 0,
+    "neutral": 1,
+    "calm": 2
+  },
+  "metabolic_state": {
+    "stress_recovery": 0,
+    "cortisol_buffer": 1,
+    "fat_burn": 2,
+    "normal": 3,
+    "muscle_repair": 4,
+    "performance": 5
+  },
+  "weather_condition": {
+    "hot": 0,
+    "cold": 1,
+    "rainy": 2,
+    "humid": 3
+  },
+  "slot": {
+    "breakfast": 0,
+    "lunch": 1,
+    "snack": 2,
+    "dinner": 3
+  },
+  "recovery_impact": {
+    "low": 0,
+    "medium": 1,
+    "high": 2
+  },
+  "prep_type": {
+    "home": 0,
+    "restaurant": 1,
+    "cloud_kitchen": 2
+  },
+  "meal_diet_type": {
+    "veg": 0,
+    "non-veg": 1,
+    "vegan": 2,
+    "jain": 3
+  },
+  "meal_budget": {
+    "low": 0,
+    "mid": 1,
+    "high": 2
+  },
+  "feature_columns": [
+    "age",
+    "bmi",
+    "gender",
+    "goal",
+    "diet_type",
+    "activity_level",
+    "budget",
+    "has_pcos",
+    "has_diabetes",
+    "has_thyroid",
+    "has_bp",
+    "heart_rate",
+    "sleep_quality",
+    "energy_level",
+    "mood",
+    "metabolic_state",
+    "weather_condition",
+    "temperature_c",
+    "slot",
+    "calorie_today",
+    "slot_calorie_target",
+    "meal_calories",
+    "meal_protein_g",
+    "meal_carbs_g",
+    "meal_fat_g",
+    "meal_inflammation_score",
+    "meal_recovery_impact",
+    "meal_budget",
+    "meal_prep_type",
+    "meal_diet_type",
+    "calorie_gap",
+    "protein_ratio",
+    "metabolic_tag_match",
+    "user_avg_rating_this_meal",
+    "user_consumed_before",
+    "user_avg_rating_similar_meals"
+  ]
+}
