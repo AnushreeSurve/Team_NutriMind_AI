@@ -27,3 +27,11 @@ class MealLogEntry(BaseModel):
     carbs_g: float
     fat_g: float
     slot: str
+
+class MealLogRequest(BaseModel):
+    user_id:  str
+    meal_id:  str
+    slot:     str
+    date:     Optional[str] = None
+    consumed: bool = True
+    rating:   Optional[int] = None   # 1–5 stars

@@ -9,8 +9,6 @@ class AuthProvider extends ChangeNotifier {
   String? _email;
   String? _name;
 
-  // Temporarily holds name+email from signup screen
-  // until onboarding completes and full signup is sent
   String? pendingName;
   String? pendingEmail;
 
@@ -31,7 +29,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   String _extractError(Map<String, dynamic> res, String fallback) {
-    final detail = res['detail'];
+    final detail  = res['detail'];
     final message = res['message'];
     if (message != null && message is String) return message;
     if (detail == null) return fallback;
@@ -65,7 +63,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Step 1 — just store name+email, navigate to onboarding
   void startSignup(String name, String email) {
     pendingName  = name;
     pendingEmail = email;
@@ -73,7 +70,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Step 2 — called from onboarding screen with all health fields
   Future<bool> completeSignup({
     required int age,
     required String gender,
@@ -96,40 +92,39 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final res = await ApiService.register(
-        name: pendingName!,
-        email: pendingEmail!,
-        age: age,
-        gender: gender,
-        heightCm: heightCm,
-        weightKg: weightKg,
-        goal: goal,
-        dietType: dietType,
+        name:          pendingName!,
+        email:         pendingEmail!,
+        age:           age,
+        gender:        gender,
+        heightCm:      heightCm,
+        weightKg:      weightKg,
+        goal:          goal,
+        dietType:      dietType,
         activityLevel: activityLevel,
-        budget: budget,
+        budget:        budget,
       );
 
       if (res['user_id'] != null || res['status'] == 'success') {
         await _saveSession(res, pendingEmail!);
         pendingName  = null;
         pendingEmail = null;
-        _isLoading = false;
+        _isLoading   = false;
         notifyListeners();
         return true;
       } else {
-        _error = _extractError(res, 'Registration failed');
+        _error     = _extractError(res, 'Registration failed');
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
-      _error = _friendlyError(e);
+      _error     = _friendlyError(e);
       _isLoading = false;
       notifyListeners();
       return false;
     }
   }
 
-  // Login — backend uses email+"_nutrisync" as password
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
@@ -143,13 +138,13 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _error = _extractError(res, 'Login failed');
+        _error     = _extractError(res, 'Login failed');
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
-      _error = _friendlyError(e);
+      _error     = _friendlyError(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -178,10 +173,12 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    _userId = null;
-    _email  = null;
-    _name   = null;
+    _userId             = null;
+    _email              = null;
+    _name               = null;
     _onboardingComplete = false;
+    pendingName         = null;
+    pendingEmail        = null;
     notifyListeners();
   }
 }

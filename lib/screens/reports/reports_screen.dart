@@ -5,7 +5,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import '../../api/api.dart';
 import '../../providers/auth_provider.dart';
-import '../../main.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});

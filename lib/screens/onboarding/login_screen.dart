@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/checkin_provider.dart';
+import '../../providers/meal_provider.dart';
 import '../../main.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -28,6 +30,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final ok = await auth.login(_emailCtrl.text.trim(), _passCtrl.text);
     if (!mounted) return;
     if (ok) {
+      // Reset stale state from any previous user session
+      context.read<CheckinProvider>().reset();
+      context.read<MealProvider>().reset();
       if (auth.onboardingComplete) {
         Navigator.pushReplacementNamed(context, '/home');
       } else {
@@ -108,4 +113,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

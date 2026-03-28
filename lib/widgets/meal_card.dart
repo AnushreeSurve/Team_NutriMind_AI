@@ -4,295 +4,259 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/meal_model.dart';
-import '../providers/auth_provider.dart';
 import '../providers/meal_provider.dart';
+import '../providers/auth_provider.dart';
 import '../main.dart';
 
-class MealSlotCard extends StatefulWidget {
+class MealSlotCard extends StatelessWidget {
   final MealSlot slot;
   const MealSlotCard({super.key, required this.slot});
+
   @override
-  State<MealSlotCard> createState() => _MealSlotCardState();
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            _slotLabel(slot.slot),
+            style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary),
+          ),
+        ),
+        ...slot.options.map((meal) => _MealOptionCard(meal: meal, slot: slot)),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  String _slotLabel(String slot) {
+    switch (slot) {
+      case 'breakfast': return '🌅 Breakfast';
+      case 'lunch':     return '☀️ Lunch';
+      case 'dinner':    return '🌙 Dinner';
+      case 'snack':     return '🍎 Snack';
+      default:          return slot[0].toUpperCase() + slot.substring(1);
+    }
+  }
 }
 
-class _MealSlotCardState extends State<MealSlotCard> {
-  int _selectedOption = 0;
+class _MealOptionCard extends StatefulWidget {
+  final Meal     meal;
+  final MealSlot slot;
+  const _MealOptionCard({required this.meal, required this.slot});
 
-  String get _slotEmoji {
-    switch (widget.slot.slot) {
-      case 'breakfast': return '🌅';
-      case 'lunch':     return '☀️';
-      case 'snack':     return '🍎';
-      case 'dinner':    return '🌙';
-      default:          return '🍽️';
+  @override
+  State<_MealOptionCard> createState() => _MealOptionCardState();
+}
+
+class _MealOptionCardState extends State<_MealOptionCard> {
+  int?  _rating;
+  bool  _logged  = false;
+  bool  _logging = false;
+
+  Future<void> _logMeal(int rating) async {
+    if (_logging) return;
+    setState(() { _logging = true; });
+
+    final auth  = context.read<AuthProvider>();
+    final meals = context.read<MealProvider>();
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    final ok = await meals.logMealWithRating(
+      userId:  auth.email ?? '',      // ← auth.userId doesn't exist, use email
+      mealId:  widget.meal.mealId,
+      slot:    widget.slot.slot,
+      date:    today,
+      rating:  rating,
+    );
+
+    if (mounted) {
+      setState(() {
+        _rating  = rating;
+        _logged  = ok;
+        _logging = false;
+      });
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.meal.name} logged! ⭐ $rating/5'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final meal = widget.slot.options.isNotEmpty
-        ? widget.slot.options[_selectedOption]
-        : null;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(
+        context,
+        '/meal-detail',
+        arguments: widget.meal,
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: _logged
+              ? Border.all(color: AppTheme.primary, width: 1.5)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Slot header
-            Row(
-              children: [
-                Text(_slotEmoji, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 8),
-                Text(
-                  widget.slot.slot[0].toUpperCase() +
-                      widget.slot.slot.substring(1),
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                Text(widget.slot.scheduledTime,
-                    style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 13)),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 56, height: 56,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.restaurant,
+                        color: AppTheme.primary, size: 28),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.meal.name,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15),
+                              ),
+                            ),
+                            if (_logged)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary
+                                      .withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text('Logged ✓',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: AppTheme.primary,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        // ↓ whyRecommended used as subtitle — no 'description' in Meal
+                        Text(
+                          widget.meal.whyRecommended,
+                          style: const TextStyle(
+                              color: AppTheme.textSecondary, fontSize: 12),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _macro('${widget.meal.calories}', 'kcal',
+                                AppTheme.primary),
+                            const SizedBox(width: 10),
+                            // ↓ proteinG not protein
+                            _macro(
+                                '${widget.meal.proteinG.toStringAsFixed(1)}g',
+                                'protein',
+                                Colors.blueAccent),
+                            const SizedBox(width: 10),
+                            // ↓ carbsG not carbs
+                            _macro(
+                                '${widget.meal.carbsG.toStringAsFixed(1)}g',
+                                'carbs',
+                                Colors.orange),
+                            const SizedBox(width: 10),
+                            // ↓ fatG not fat
+                            _macro(
+                                '${widget.meal.fatG.toStringAsFixed(1)}g',
+                                'fat',
+                                Colors.redAccent),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
 
-            if (meal != null) ...[
-              const SizedBox(height: 12),
-              // Option selector
-              if (widget.slot.options.length > 1)
-                Row(
-                  children: List.generate(widget.slot.options.length, (i) {
+            // ── Star rating row ───────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Row(
+                children: [
+                  const Text('Rate & log: ',
+                      style: TextStyle(
+                          fontSize: 12, color: AppTheme.textSecondary)),
+                  const SizedBox(width: 4),
+                  ...List.generate(5, (i) {
+                    final star = i + 1;
                     return GestureDetector(
-                      onTap: () => setState(() => _selectedOption = i),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _selectedOption == i
-                              ? AppTheme.primary
-                              : const Color(0xFFF1F3F4),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text('Option ${i + 1}',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: _selectedOption == i
-                                    ? Colors.white
-                                    : AppTheme.textSecondary)),
+                      onTap: _logging ? null : () => _logMeal(star),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: _logging
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 1.5))
+                            : Icon(
+                                (_rating != null && star <= _rating!)
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: Colors.amber,
+                                size: 22,
+                              ),
                       ),
                     );
                   }),
-                ),
-
-              const SizedBox(height: 10),
-
-              // Meal name
-              Text(meal.name,
-                  style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(meal.whyRecommended,
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 13)),
-
-              const SizedBox(height: 12),
-
-              // Nutrition row
-              Row(
-                children: [
-                  _nutriChip('${meal.calories} kcal', AppTheme.accent),
-                  const SizedBox(width: 6),
-                  _nutriChip('${meal.proteinG}g protein', AppTheme.primary),
-                  const SizedBox(width: 6),
-                  _nutriChip('Inflam ${meal.inflammationScore}/10',
-                      meal.inflammationScore <= 3
-                          ? AppTheme.secondary
-                          : meal.inflammationScore <= 6
-                              ? AppTheme.accent
-                              : AppTheme.danger),
                 ],
               ),
-
-              const SizedBox(height: 12),
-
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pushNamed(
-                        context, '/meal-detail',
-                        arguments: {
-                          'meal_id':            meal.mealId,
-                          'name':               meal.name,
-                          'calories':           meal.calories,
-                          'protein_g':          meal.proteinG,
-                          'carbs_g':            meal.carbsG,
-                          'fat_g':              meal.fatG,
-                          'inflammation_score': meal.inflammationScore,
-                          'recovery_impact':    meal.recoveryImpact,
-                          'prep_type':          meal.prepType,
-                          'why_recommended':    meal.whyRecommended,
-                        },
-                      ),
-                      style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 40)),
-                      child: const Text('Details'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _showFeedbackSheet(context, meal),
-                      style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(0, 40)),
-                      child: const Text('Log Meal'),
-                    ),
-                  ),
-                ],
-              ),
-            ] else
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No options available',
-                    style: TextStyle(color: AppTheme.textSecondary)),
-              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _nutriChip(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(text,
-          style: TextStyle(
-              fontSize: 11, color: color, fontWeight: FontWeight.w500)),
-    );
-  }
-
-  void _showFeedbackSheet(BuildContext context, Meal meal) {
-    bool? consumed;
-    int rating = 4;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-          padding: EdgeInsets.only(
-            left: 24, right: 24, top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Log: ${meal.name}',
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              const Text('Did you eat this meal?',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _feedbackBtn('Yes ✅', consumed == true,
-                        () => setSheetState(() => consumed = true)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _feedbackBtn('No ❌', consumed == false,
-                        () => setSheetState(() => consumed = false)),
-                  ),
-                ],
-              ),
-              if (consumed == true) ...[
-                const SizedBox(height: 20),
-                const Text('Rate this meal:',
-                    style: TextStyle(fontWeight: FontWeight.w500)),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (i) {
-                    return GestureDetector(
-                      onTap: () => setSheetState(() => rating = i + 1),
-                      child: Icon(
-                        i < rating ? Icons.star : Icons.star_border,
-                        color: AppTheme.accent,
-                        size: 36,
-                      ),
-                    );
-                  }),
-                ),
-              ],
-              const SizedBox(height: 20),
-              if (consumed != null)
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    final auth  = context.read<AuthProvider>();
-                    final meals = context.read<MealProvider>();
-                    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-                    await meals.logMeal(
-                      userId:   auth.userId ?? '',
-                      mealId:   meal.mealId,
-                      slot:     widget.slot.slot,
-                      date:     today,
-                      consumed: consumed!,
-                      rating:   consumed! ? rating : null,
-                    );
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Meal logged!')));
-                    }
-                  },
-                  child: const Text('Submit'),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _feedbackBtn(String label, bool selected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppTheme.primary.withOpacity(0.1)
-              : const Color(0xFFF1F3F4),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: selected ? AppTheme.primary : Colors.transparent,
-              width: 2),
-        ),
-        child: Center(
-          child: Text(label,
-              style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: selected ? AppTheme.primary : AppTheme.textSecondary)),
-        ),
-      ),
+  Widget _macro(String value, String label, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value,
+            style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.bold, color: color)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 10, color: AppTheme.textSecondary)),
+      ],
     );
   }
 }
-

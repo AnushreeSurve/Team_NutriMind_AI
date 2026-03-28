@@ -8,11 +8,22 @@ class CheckinProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   bool _checkinDone = false;
+  int? _lastCheckinHeartRate;        // ← stores HR for InsightsScreen graph
 
-  CheckinResult? get lastCheckin => _lastCheckin;
-  bool get isLoading             => _isLoading;
-  String? get error              => _error;
-  bool get checkinDone           => _checkinDone;
+  CheckinResult? get lastCheckin        => _lastCheckin;
+  bool get isLoading                    => _isLoading;
+  String? get error                     => _error;
+  bool get checkinDone                  => _checkinDone;
+  int? get lastCheckinHeartRate         => _lastCheckinHeartRate;
+
+  void reset() {
+    _lastCheckin          = null;
+    _checkinDone          = false;
+    _error                = null;
+    _isLoading            = false;
+    _lastCheckinHeartRate = null;     // ← reset HR too
+    notifyListeners();
+  }
 
   Future<bool> submitCheckin({
     required String userId,
@@ -37,25 +48,27 @@ class CheckinProvider extends ChangeNotifier {
       });
 
       if (res['metabolic_state'] != null || res['status'] == 'success') {
-        _lastCheckin = CheckinResult.fromJson(res);
-        _checkinDone = true;
-        _isLoading   = false;
+        _lastCheckin          = CheckinResult.fromJson(res);
+        _lastCheckinHeartRate = heartRate;   // ← store HR from checkin
+        _checkinDone          = true;
+        _isLoading            = false;
         notifyListeners();
         return true;
       } else {
-        // Extract error safely whether detail is String or List
         final detail = res['detail'];
         if (detail is List && detail.isNotEmpty) {
           _error = detail[0]['msg']?.toString() ?? 'Check-in failed';
         } else {
-          _error = detail?.toString() ?? res['message']?.toString() ?? 'Check-in failed';
+          _error = detail?.toString()
+              ?? res['message']?.toString()
+              ?? 'Check-in failed';
         }
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
-      _error = 'Connection error during check-in: ${e.toString()}';
+      _error     = 'Connection error during check-in';
       _isLoading = false;
       notifyListeners();
       return false;
